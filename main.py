@@ -24,10 +24,11 @@ gravatar = Gravatar(app,
                     base_url=None)
 
 ##CONNECT TO DB
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get("DATABASE",  "sqlite:///blog.db")
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get("DATABASE", "sqlite:///blog.db")
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 login_manager = LoginManager(app)
+
 
 ##CONFIGURE TABLES
 class Comment(db.Model):
@@ -39,11 +40,12 @@ class Comment(db.Model):
     parent_post = relationship("BlogPost", back_populates="comments")
     post_id = db.Column(db.Integer, db.ForeignKey("blog_posts.id"))
 
+
 class BlogPost(db.Model):
     __tablename__ = "blog_posts"
     id = db.Column(db.Integer, primary_key=True)
     author_id = db.Column(db.Integer, db.ForeignKey('users.id'))
-    author = relationship("User",  back_populates="posts")
+    author = relationship("User", back_populates="posts")
     title = db.Column(db.String(250), unique=True, nullable=False)
     subtitle = db.Column(db.String(250), nullable=False)
     date = db.Column(db.String(250), nullable=False)
@@ -51,13 +53,14 @@ class BlogPost(db.Model):
     img_url = db.Column(db.String(250), nullable=False)
     comments = relationship("Comment", back_populates="parent_post")
 
+
 class User(UserMixin, db.Model):
     __tablename__ = "users"
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(250), unique=True)
     password = db.Column(db.String(1200))
     name = db.Column(db.String(250))
-    posts = relationship("BlogPost",  back_populates="author")
+    posts = relationship("BlogPost", back_populates="author")
     comments = relationship("Comment", back_populates="comment_author")
 
 
@@ -73,6 +76,7 @@ def is_admin():
     else:
         return False
 
+
 def admin_only(function):
     @wraps(function)
     def wrapper(*arg, **kw):
@@ -80,6 +84,7 @@ def admin_only(function):
             return function(*arg, **kw)
         else:
             return abort(403)
+
     return wrapper
 
 
@@ -91,7 +96,7 @@ def get_all_posts():
     return render_template("index.html", all_posts=posts, logged_in=user_logged.is_authenticated, admin=admin)
 
 
-@app.route('/register', methods=["GET","POST"])
+@app.route('/register', methods=["GET", "POST"])
 def register():
     form = Register()
     if request.method == "POST":
@@ -156,6 +161,7 @@ def show_post(post_id):
                                       )
                 db.session.add(new_comment)
                 db.session.commit()
+                return redirect(url_for("show_post", post_id=post_id))
             else:
                 flash("Please Log in First.")
                 return redirect("/login")
@@ -220,7 +226,7 @@ def delete_post(post_id):
     post_to_delete = BlogPost.query.get(post_id)
     db.session.delete(post_to_delete)
     db.session.commit()
-    return redirect(url_for('get_all_posts',logged_in=current_user.is_authenticated))
+    return redirect(url_for('get_all_posts', logged_in=current_user.is_authenticated))
 
 
 if __name__ == "__main__":
